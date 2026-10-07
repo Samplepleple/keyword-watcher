@@ -1,6 +1,5 @@
 {
-  "checked_at": "2026-10-07T16:20:50+00:00",
-  "ntfy_topic": "kw-6e453407b4",
+  "checked_at": "2026-10-07T16:32:07+00:00",
   "sites": [
     {
       "url": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
@@ -10,5 +9,7 @@
       ]
     }
   ],
-  "items": []
+  "items": [],
+  "relay_topic": "kw-6e453407b4-sub",
+  "vapid_public_key": "BNbdp9OPGY84Fn_SaESbri0iSNezUcMrnA8ehMnY5YdJez5RCz-kwzvhN5F4PGQ99LselDTE8N_Ja94EbVeywrI"
 }
