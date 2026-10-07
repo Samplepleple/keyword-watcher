@@ -1,15 +1,29 @@
 {
-  "checked_at": "2026-10-07T16:32:07+00:00",
+  "checked_at": "2026-10-07T16:42:17+00:00",
   "sites": [
     {
       "url": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
       "keywords": [
-        "flow",
-        "atarayo"
+        "售票"
       ]
     }
   ],
-  "items": [],
+  "items": [
+    {
+      "found_at": "2026-10-07T16:42:17+00:00",
+      "source": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
+      "keyword": "售票",
+      "snippet": "[售票] F FOREVER恆星之城 1680*2降售3000",
+      "link": "https://www.ptt.cc/bbs/Drama-Ticket/M.1791390184.A.94D.html"
+    },
+    {
+      "found_at": "2026-10-07T16:42:17+00:00",
+      "source": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
+      "keyword": "售票",
+      "snippet": "[售票] 2026 秋OUT音樂節 雙日實體票",
+      "link": "https://www.ptt.cc/bbs/Drama-Ticket/M.1791390648.A.8E2.html"
+    }
+  ],
   "relay_topic": "kw-6e453407b4-sub",
   "vapid_public_key": "BNbdp9OPGY84Fn_SaESbri0iSNezUcMrnA8ehMnY5YdJez5RCz-kwzvhN5F4PGQ99LselDTE8N_Ja94EbVeywrI"
 }

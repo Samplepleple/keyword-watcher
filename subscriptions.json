@@ -1,4 +1,19 @@
 {
-  "relay_since": "12h",
-  "subscriptions": []
+  "relay_since": "etDd4h0pUNQA",
+  "subscriptions": [
+    {
+      "endpoint": "https://fcm.googleapis.com/fcm/send/dJP3dKdgVBs:APA91bFc672NIR4lBo5J9ooaNW306E8yZ9l9YxUbfZtk3t_PmMI5p7DLoJVSxS0QtUEoS4ZLbmbPnIhPA1iHTBNqrWJS8I8RMo1o6ZrcFapl6G-IpVCYwIEID9Iu_sYKXMLU-InYBfVs",
+      "keys": {
+        "p256dh": "BLSXU3Xkrc7BHRkeXffOpa7vJ-_WZV_jVBeZVPHzjYeEg--4mfggkqd8cERh3RcMWxymixMRFmyVTCpyEQ8Pglg",
+        "auth": "6A0J_Dn_8WuvuveXVtT4JA"
+      }
+    },
+    {
+      "endpoint": "https://web.push.apple.com/QKegeJ3W5Xc_iBvCP1yIZW5uEbKz22WMVaV1BrDk7visQEUJYNuELbVS2ORNd44IqhPXlmAYFsB_cXwSCUmxdLJIDiPbF8M3H1q2vkaVUqNpbBOiBnz1yr6W_T56GM9QbyZtRUiGrZBT75tYhjvBfUYfy1KnM1IKE8hHMYQ1Odg",
+      "keys": {
+        "p256dh": "BNrBv7bAeZ-TF4ym8vAovHJIe2_7Y8E01EIdKQjAo3cKKCnOxAYNEfceCmqMzQfVQOB8cVDMfMr_fbYN_JZ0DkQ",
+        "auth": "-ng_sv_6aUg1pPY-h3QivA"
+      }
+    }
+  ]
 }
