@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
-"""網站關鍵字監控：當指定網頁出現「新的」關鍵字內容時，推播通知到手機（ntfy）。
+"""網站關鍵字監控：當指定網頁出現「新的」關鍵字內容時，推播通知到手機。
 
-只用 Python 標準函式庫，不需安裝任何套件。
 平常由 GitHub Actions 每 5 分鐘自動執行，結果寫進 docs/data.json 給網頁顯示。
-
-推播頻道名稱寫在 config.json 的 ntfy_topic（也可用環境變數 NTFY_TOPIC 覆蓋）。
-手機用 Safari 打開 https://ntfy.sh/app 加入主畫面、訂閱同一個頻道就會收到通知，不用安裝 App。
+手機把監控網頁「加入主畫面」並按「開啟通知」就會收到推播（推播細節見 push.py）。
 
 用法：
-    python3 keyword_watcher.py --test-notify   # 推播一則測試通知
+    python3 keyword_watcher.py --test-notify   # 推播一則測試通知給所有手機
     python3 keyword_watcher.py --once          # 檢查一次就結束（GitHub Actions 用這個）
     python3 keyword_watcher.py                 # 持續執行，每隔 interval_minutes 檢查一次
 """
@@ -16,7 +13,6 @@
 import argparse
 import hashlib
 import json
-import os
 import re
 import sys
 import time
@@ -26,6 +22,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlsplit
 from urllib.request import Request, urlopen
 
+import push
+
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config.json"
 STATE_PATH = BASE_DIR / "state.json"
@@ -34,6 +32,7 @@ CONTEXT_CHARS = 60      # 關鍵字前後各擷取多少字當作上下文
 MAX_KNOWN = 2000        # 每個網站最多記住幾筆已通知過的內容
 MAX_ITEMS = 100         # 網頁上最多顯示幾筆
 MAX_PUSHES = 5          # 一次新內容太多時，超過這個數量就合併成一則通知
+PAGE_URL = "https://samplepleple.github.io/keyword-watcher/"   # 通知合併時點開的頁面
 
 
 class TextExtractor(HTMLParser):
@@ -136,28 +135,14 @@ def match_id(url, match):
     return hashlib.sha1(f"{url}|{match['keyword']}|{key}".encode()).hexdigest()
 
 
-NTFY_SERVER = "https://ntfy.sh"
-
-
-def notify(topic, title, message, click=None):
-    """透過 ntfy 推播到手機。"""
-    payload = {"topic": topic, "title": title, "message": message, "tags": ["bell"]}
-    if click:
-        payload["click"] = click
-    req = Request(NTFY_SERVER, data=json.dumps(payload).encode("utf-8"),
-                  headers={"Content-Type": "application/json"})
-    with urlopen(req, timeout=30):
-        pass
-
-
-def send_notifications(topic, new_items):
+def send_notifications(new_items):
     if len(new_items) > MAX_PUSHES:
         kws = "、".join(sorted({m["keyword"] for _, m in new_items}))
-        notify(topic, f"發現 {len(new_items)} 筆新內容：{kws}",
-               "\n".join(f"・{m['snippet']}" for _, m in new_items[:10]))
+        push.send(f"發現 {len(new_items)} 筆新內容：{kws}",
+                  "\n".join(f"・{m['snippet']}" for _, m in new_items[:10]), PAGE_URL)
         return
     for url, m in new_items:
-        notify(topic, f"新內容：{m['keyword']}", m["snippet"], m["link"] or url)
+        push.send(f"新內容：{m['keyword']}", m["snippet"], m["link"] or url)
 
 
 def check_once(cfg, state):
@@ -188,7 +173,7 @@ def check_once(cfg, state):
         new_items += [(url, m) for m in fresh]
 
     if new_items:
-        send_notifications(cfg["ntfy_topic"], new_items)
+        send_notifications(new_items)
         log(f"已推播通知（{len(new_items)} 筆）")
 
     # 推播成功才記錄為「已通知」，失敗的下次會再推
@@ -203,12 +188,14 @@ def update_page_data(cfg, new_items):
     data = load_json(DATA_PATH, {"items": []})
     now = datetime.now(timezone.utc)
     sites = [{"url": s["url"], "keywords": s["keywords"]} for s in cfg["sites"]]
-    unchanged = data.get("sites") == sites and data.get("ntfy_topic") == cfg["ntfy_topic"]
+    page_cfg = {k: cfg[k] for k in ("relay_topic", "vapid_public_key")}
+    unchanged = data.get("sites") == sites and all(data.get(k) == v for k, v in page_cfg.items())
     if not new_items and unchanged and data.get("checked_at", "")[:10] == now.date().isoformat():
         return
     found_at = now.isoformat(timespec="seconds")
     items = [{"found_at": found_at, "source": url, **m} for url, m in new_items]
-    data.update(checked_at=found_at, ntfy_topic=cfg["ntfy_topic"], sites=sites,
+    data.pop("ntfy_topic", None)
+    data.update(checked_at=found_at, **page_cfg, sites=sites,
                 items=(items + data["items"])[:MAX_ITEMS])
     write_json(DATA_PATH, data)
 
@@ -222,13 +209,16 @@ def main():
     if not CONFIG_PATH.exists():
         sys.exit(f"找不到設定檔 {CONFIG_PATH}")
     cfg = load_json(CONFIG_PATH, {})
-    cfg["ntfy_topic"] = os.environ.get("NTFY_TOPIC") or cfg.get("ntfy_topic", "")
-    if not cfg["ntfy_topic"]:
-        sys.exit("config.json 沒有設定 ntfy_topic，無法推播")
+    try:
+        added = push.collect_subscriptions(cfg["relay_topic"], log)
+        if added:
+            push.send("通知已開啟 🎉", "之後有新的關鍵字內容會在這裡通知你", PAGE_URL, only=added)
+    except Exception as ex:
+        log(f"讀取新的通知訂閱失敗：{ex}")
 
     if args.test_notify:
-        notify(cfg["ntfy_topic"], "關鍵字監控測試", "如果你看到這則通知，代表手機推播設定正確 🎉")
-        log("測試通知已送出")
+        n = push.send("關鍵字監控測試", "如果你看到這則通知，代表手機推播設定正確 🎉", PAGE_URL)
+        log(f"測試通知已送出（{n} 支手機）")
         return
     state = load_json(STATE_PATH, {})
     if args.once:

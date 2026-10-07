@@ -7,8 +7,10 @@
 <meta name="apple-mobile-web-app-title" content="關鍵字監控">
 <meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121418" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
 <title>關鍵字監控</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>">
 <style>
   :root {
     --bg: #f5f6f8; --card: #ffffff; --fg: #1b2029; --muted: #687184; --line: #e2e5eb;
@@ -21,21 +23,27 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0; background: var(--bg); color: var(--fg);
     font: 16px/1.55 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
     -webkit-text-size-adjust: 100%;
   }
-  main { max-width: 640px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px 40px; }
+  main { max-width: 640px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px max(40px, env(safe-area-inset-bottom)); }
   header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
   h1 { font-size: 24px; margin: 0; flex: 1; }
-  h2 { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 24px 0 8px; }
+  h2 { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 24px 0 8px;
+       display: flex; align-items: center; justify-content: space-between; }
   .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; margin: 0 0 16px; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
   .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
-  .sites .site { padding: 12px 14px; border-top: 1px solid var(--line); }
-  .sites .site:first-child { border-top: 0; }
+  .pad { padding: 14px; }
+  .pad p { margin: 0 0 10px; } .pad p:last-child { margin-bottom: 0; }
+  .pad ol { margin: 0 0 10px; padding-left: 20px; } .pad li { margin-bottom: 4px; }
+  .muted { color: var(--muted); font-size: 13px; }
+  .site { padding: 12px 14px; border-top: 1px solid var(--line); }
+  .site:first-child { border-top: 0; }
   .site a { color: var(--fg); text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
@@ -48,63 +56,109 @@
   .snippet { overflow-wrap: anywhere; }
   .snippet mark { background: none; color: var(--accent); font-weight: 600; }
   .empty { padding: 20px 14px; color: var(--muted); text-align: center; }
-  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
-  .btn {
-    display: block; text-align: center; padding: 11px 8px; border-radius: 10px; font-size: 15px;
-    background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none;
+  button, .btn {
+    display: inline-block; text-align: center; padding: 10px 14px; border-radius: 10px; font: inherit; font-size: 15px;
+    background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none; cursor: pointer;
   }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .setup { padding: 12px 14px; }
-  .setup p { margin: 0 0 8px; }
-  .setup ol { margin: 0 0 8px; padding-left: 20px; }
-  .setup li { margin-bottom: 4px; }
-  .setup a { color: var(--accent); }
-  .muted { color: var(--muted); font-size: 13px; }
-  code { background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-size: 15px; }
-  .copy { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; padding: 2px 10px; font: inherit; font-size: 13px; }
-  .refresh { border: 0; background: none; color: var(--accent); font: inherit; font-size: 15px; padding: 6px; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.link { border: 0; background: none; color: var(--accent); padding: 4px 6px; font-size: 14px; }
+  button.danger { color: var(--bad); }
+  button:disabled { opacity: .5; }
+  .full { width: 100%; }
+  .row { display: flex; gap: 8px; margin-top: 10px; }
+  .row > * { flex: 1; }
+  input {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--fg); font: inherit; font-size: 16px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 4px; }
+  .edit-site { padding: 12px 14px; border-top: 1px solid var(--line); }
+  .edit-site:first-child { border-top: 0; }
+  .edit-head { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+  .msg { margin: 10px 0 0; font-size: 14px; }
+  .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+  a.inline { color: var(--accent); }
 </style>
 </head>
 <body>
 <main>
   <header>
     <h1>🔔 關鍵字監控</h1>
-    <button class="refresh" onclick="load()">重新整理</button>
+    <button class="link" onclick="load()">重新整理</button>
   </header>
   <p class="status"><span class="dot" id="dot"></span><span id="status">讀取中…</span></p>
+
+  <!-- 通知設定：依手機狀態顯示其中一段 -->
+  <h2>手機通知</h2>
+  <div class="card pad">
+    <div id="n-install" hidden>
+      <p>先把這個網頁加入主畫面，才能收到通知：</p>
+      <ol>
+        <li>點 Safari 下方的「分享」按鈕</li>
+        <li>選「加入主畫面」</li>
+        <li>從主畫面打開「關鍵字監控」，再按「開啟通知」</li>
+      </ol>
+      <p class="muted">需要 iPhone iOS 16.4 以上，並使用 Safari 開啟（LINE 等 App 內的瀏覽器不行）。</p>
+    </div>
+    <div id="n-unsupported" hidden>
+      <p>這個瀏覽器不支援網頁通知。iPhone 請更新到 iOS 16.4 以上，並用 Safari 開啟這個網址。</p>
+    </div>
+    <div id="n-off" hidden>
+      <p>開啟後，有新的關鍵字內容就會跳出通知，點通知會直接打開文章。</p>
+      <button class="primary full" id="n-btn" onclick="enableNotify()">開啟通知</button>
+    </div>
+    <div id="n-on" hidden>
+      <p>✅ 這支手機已開啟通知</p>
+      <p class="muted">剛開啟的話，幾分鐘內會收到一則「通知已開啟」確認。</p>
+      <button class="link danger" onclick="disableNotify()">關閉這支手機的通知</button>
+    </div>
+    <div id="n-denied" hidden>
+      <p>通知被拒絕了。請到 iPhone「設定」→「通知」→「關鍵字監控」重新允許。</p>
+    </div>
+    <p class="msg" id="n-msg"></p>
+  </div>
 
   <h2>最近找到的新內容</h2>
   <div class="card"><ul class="items" id="items"><li class="empty">讀取中…</li></ul></div>
 
-  <h2>監控中的網站</h2>
-  <div class="card sites" id="sites"></div>
+  <h2>監控中的網站 <button class="link" id="edit-btn" onclick="startEdit()">修改</button></h2>
+  <div class="card" id="sites"></div>
 
-  <div class="actions">
-    <a class="btn primary" id="edit" target="_blank" rel="noopener">修改網站／關鍵字</a>
-    <a class="btn" id="run" target="_blank" rel="noopener">立即檢查</a>
+  <!-- 修改模式 -->
+  <div id="editor" hidden>
+    <div class="card" id="edit-list"></div>
+    <div class="row">
+      <button onclick="addRow()">＋ 新增網站</button>
+    </div>
+    <div class="card pad" id="token-box" style="margin-top:10px" hidden>
+      <p><b>第一次修改需要 GitHub 金鑰</b>（只要貼一次，這支手機會記住）</p>
+      <ol class="muted">
+        <li>打開 <a class="inline" id="token-link" target="_blank" rel="noopener">GitHub 金鑰產生頁</a></li>
+        <li>Repository access 選「Only select repositories」→ 選 keyword-watcher</li>
+        <li>Permissions → Repository permissions → <b>Contents</b> 設為「Read and write」</li>
+        <li>按「Generate token」，複製金鑰貼到下面</li>
+      </ol>
+      <input id="token" type="password" placeholder="github_pat_…" autocomplete="off">
+    </div>
+    <div class="row">
+      <button onclick="cancelEdit()">取消</button>
+      <button class="primary" id="save-btn" onclick="saveEdit()">儲存</button>
+    </div>
   </div>
-
-  <h2>開啟手機通知（不用裝 App）</h2>
-  <div class="card setup">
-    <p>頻道名稱：<code id="topic">—</code> <button class="copy" onclick="copyTopic()">複製</button></p>
-    <ol>
-      <li>用 iPhone 的 <b>Safari</b> 打開 <a href="https://ntfy.sh/app" target="_blank" rel="noopener">ntfy.sh/app</a></li>
-      <li>點下方「分享」→「加入主畫面」</li>
-      <li>從主畫面打開 ntfy，按「＋ 訂閱主題」，貼上上面的頻道名稱</li>
-      <li>跳出詢問時按「允許」通知，就完成了 🎉</li>
-    </ol>
-    <p class="muted">需要 iOS 16.4 以上。超過一週沒打開主畫面上的 ntfy，通知會暫停，打開一次就會恢復。
-      想隨時看這個頁面，也可以把這頁「加入主畫面」。</p>
-  </div>
+  <p class="msg" id="edit-msg"></p>
 </main>
 
 <script>
   // 從網址推算 GitHub 帳號與 repo，例如 https://帳號.github.io/repo名稱/
   const owner = location.hostname.split(".")[0];
   const repo = location.pathname.split("/").filter(Boolean)[0] || "";
-  const repoUrl = `https://github.com/${owner}/${repo}`;
-  document.getElementById("edit").href = `${repoUrl}/edit/main/config.json`;
-  document.getElementById("run").href = `${repoUrl}/actions/workflows/watch.yml`;
+  const api = `https://api.github.com/repos/${owner}/${repo}`;
+  const store = {  // 瀏覽器儲存可能被停用，失敗時當作沒有
+    get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+    set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} },
+  };
+  let data = {};
+  const $ = id => document.getElementById(id);
 
   const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const ago = d => {
@@ -114,48 +168,180 @@
     if (min < 1440) return `${Math.round(min / 60)} 小時前`;
     return d.toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" });
   };
-  const highlight = (text, kw) => esc(text).replace(new RegExp(esc(kw).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`);
+  const highlight = (text, kw) => esc(text).replace(
+    new RegExp(esc(kw).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`);
+
+  // ---------- 顯示資料 ----------
+  function renderSites(sites) {
+    $("sites").innerHTML = sites.length ? sites.map(s => `
+      <div class="site"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https?:\/\//, ""))}</a>
+        <div class="chips">${s.keywords.map(k => `<span class="chip">${esc(k)}</span>`).join("")}</div></div>`).join("")
+      : `<div class="empty">還沒有監控任何網站，按右上「修改」新增。</div>`;
+  }
 
   async function loadData() {
-    const data = await (await fetch("data.json", { cache: "no-store" })).json();
-    document.getElementById("topic").textContent = data.ntfy_topic || "—";
+    data = await (await fetch("data.json", { cache: "no-store" })).json();
     const items = data.items || [];
-    document.getElementById("items").innerHTML = items.length ? items.map(it => `
+    $("items").innerHTML = items.length ? items.map(it => `
       <li><a href="${esc(it.link || it.source)}" target="_blank" rel="noopener">
         <div class="meta"><span class="chip">${esc(it.keyword)}</span><span>${ago(new Date(it.found_at))}</span></div>
         <div class="snippet">${highlight(it.snippet, it.keyword)}</div>
       </a></li>`).join("")
       : `<li class="empty">還沒有新內容。<br>第一次檢查只會記錄現有內容當基準，之後新出現的才會通知。</li>`;
-    document.getElementById("sites").innerHTML = (data.sites || []).map(s => `
-      <div class="site"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https?:\/\//, ""))}</a>
-        <div class="chips">${s.keywords.map(k => `<span class="chip">${esc(k)}</span>`).join("")}</div></div>`).join("");
+    if ($("editor").hidden) renderSites(data.sites || []);
   }
 
   async function loadStatus() {
-    const dot = document.getElementById("dot"), status = document.getElementById("status");
+    const dot = $("dot"), status = $("status");
     try {
-      const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/watch.yml/runs?per_page=1`);
+      const r = await fetch(`${api}/actions/workflows/watch.yml/runs?per_page=1`);
       const run = (await r.json()).workflow_runs?.[0];
       if (!run) throw new Error();
       const when = new Date(run.run_started_at || run.created_at);
-      const stale = Date.now() - when > 30 * 60000;
       if (run.status !== "completed") { dot.className = "dot ok"; status.textContent = "正在檢查…"; }
       else if (run.conclusion !== "success") { dot.className = "dot bad"; status.textContent = `上次檢查失敗（${ago(when)}）`; }
-      else { dot.className = stale ? "dot warn" : "dot ok"; status.textContent = `監控中・上次檢查 ${ago(when)}`; }
+      else { dot.className = Date.now() - when > 30 * 60000 ? "dot warn" : "dot ok"; status.textContent = `監控中・上次檢查 ${ago(when)}`; }
     } catch {
       dot.className = "dot"; status.textContent = "無法取得檢查狀態";
     }
   }
 
-  function copyTopic() {
-    const btn = document.querySelector(".copy");
-    navigator.clipboard.writeText(document.getElementById("topic").textContent)
-      .then(() => { btn.textContent = "已複製"; setTimeout(() => btn.textContent = "複製", 1500); });
+  function load() { loadData().then(showNotifyState).catch(() => {}); loadStatus(); }
+
+  // ---------- 手機通知 ----------
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const standalone = navigator.standalone || matchMedia("(display-mode: standalone)").matches;
+  const swReady = "serviceWorker" in navigator ? navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready) : null;
+
+  function showPanel(name) {
+    for (const p of ["install", "unsupported", "off", "on", "denied"]) $(`n-${p}`).hidden = p !== name;
   }
 
-  function load() { loadData().catch(() => {}); loadStatus(); }
+  async function showNotifyState() {
+    if (isIOS && !standalone) return showPanel("install");
+    if (!swReady || !("PushManager" in window) || !("Notification" in window)) return showPanel("unsupported");
+    if (Notification.permission === "denied") return showPanel("denied");
+    const reg = await swReady;
+    const sub = await reg.pushManager.getSubscription();
+    showPanel(sub && Notification.permission === "granted" ? "on" : "off");
+  }
+
+  function keyBytes(b64) {
+    const s = atob(b64.replace(/-/g, "+").replace(/_/g, "/") + "=".repeat((4 - b64.length % 4) % 4));
+    return Uint8Array.from(s, c => c.charCodeAt(0));
+  }
+
+  async function enableNotify() {
+    const btn = $("n-btn"), msg = $("n-msg");
+    btn.disabled = true; msg.className = "msg"; msg.textContent = "設定中…";
+    try {
+      // iPhone 規定：詢問通知權限要直接在按下按鈕時發生
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") { msg.textContent = ""; return showNotifyState(); }
+      const reg = await swReady;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(data.vapid_public_key) });
+      // 把訂閱資料交給監控程式（經由中繼頻道），下一次檢查時就會生效
+      const r = await fetch(`https://ntfy.sh/${encodeURIComponent(data.relay_topic)}`, { method: "POST", body: JSON.stringify(sub) });
+      if (!r.ok) throw new Error(`中繼站回應 ${r.status}`);
+      msg.className = "msg ok"; msg.textContent = "完成！幾分鐘內會收到一則確認通知。";
+      showPanel("on");
+    } catch (e) {
+      msg.className = "msg bad"; msg.textContent = `開啟失敗：${e.message || e}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function disableNotify() {
+    const sub = await (await swReady).pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    $("n-msg").className = "msg"; $("n-msg").textContent = "已關閉這支手機的通知。";
+    showNotifyState();
+  }
+
+  // ---------- 修改網站／關鍵字 ----------
+  $("token-link").href = "https://github.com/settings/personal-access-tokens/new?name=keyword-watcher";
+
+  function rowHtml(s = { url: "", keywords: [] }) {
+    return `<div class="edit-site">
+      <div class="edit-head"><span>網站</span><button class="link danger" onclick="this.closest('.edit-site').remove()">刪除</button></div>
+      <label>網址</label><input class="e-url" type="url" inputmode="url" placeholder="https://www.ptt.cc/bbs/看板名稱/index.html" value="${esc(s.url)}">
+      <label>關鍵字（用逗號分隔）</label><input class="e-kw" placeholder="例如：flow, atarayo" value="${esc(s.keywords.join(", "))}">
+    </div>`;
+  }
+  function addRow() { $("edit-list").insertAdjacentHTML("beforeend", rowHtml()); }
+
+  function startEdit() {
+    $("edit-list").innerHTML = (data.sites || []).map(s => rowHtml(s)).join("") || rowHtml();
+    $("token-box").hidden = !!store.get("gh_token");
+    $("edit-msg").textContent = "";
+    $("editor").hidden = false; $("sites").hidden = true; $("edit-btn").hidden = true;
+  }
+  function cancelEdit() {
+    $("editor").hidden = true; $("sites").hidden = false; $("edit-btn").hidden = false;
+    renderSites(data.sites || []);
+  }
+
+  const b64encode = str => btoa(Array.from(new TextEncoder().encode(str), b => String.fromCharCode(b)).join(""));
+  const b64decode = b64 => new TextDecoder().decode(Uint8Array.from(atob(b64.replace(/\s/g, "")), c => c.charCodeAt(0)));
+
+  async function gh(path, token, options = {}) {
+    const r = await fetch(`${api}${path}`, { ...options, headers: {
+      Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", ...(options.headers || {}) } });
+    if (r.status === 401) throw Object.assign(new Error("金鑰無效或已過期，請重新貼上"), { badToken: true });
+    if (r.status === 403 || r.status === 404) throw Object.assign(new Error("金鑰沒有修改這個 repo 的權限（Contents 要設為 Read and write）"), { badToken: true });
+    if (!r.ok) throw Object.assign(new Error(`GitHub 回應 ${r.status}`), { status: r.status });
+    return r.json();
+  }
+
+  async function saveEdit() {
+    const msg = $("edit-msg"), btn = $("save-btn");
+    const sites = [...document.querySelectorAll(".edit-site")].map(el => ({
+      url: el.querySelector(".e-url").value.trim(),
+      keywords: el.querySelector(".e-kw").value.split(/[,，、]/).map(k => k.trim()).filter(Boolean),
+    })).filter(s => s.url || s.keywords.length);
+    const bad = sites.find(s => !/^https?:\/\/\S+$/.test(s.url) || !s.keywords.length);
+    if (bad) { msg.className = "msg bad"; msg.textContent = "每個網站都要填正確的網址（https:// 開頭）和至少一個關鍵字"; return; }
+
+    const token = store.get("gh_token") || $("token").value.trim();
+    if (!token) { $("token-box").hidden = false; msg.className = "msg bad"; msg.textContent = "請先貼上 GitHub 金鑰"; return; }
+
+    btn.disabled = true; msg.className = "msg"; msg.textContent = "儲存中…";
+    try {
+      for (let attempt = 0; ; attempt++) {
+        // 每次都讀最新版本，避免蓋掉自動檢查剛寫入的內容
+        const file = await gh("/contents/config.json?ref=main", token);
+        const cfg = JSON.parse(b64decode(file.content));
+        cfg.sites = sites;
+        try {
+          await gh("/contents/config.json", token, { method: "PUT", body: JSON.stringify({
+            message: "從網頁更新監控網站與關鍵字",
+            content: b64encode(JSON.stringify(cfg, null, 2) + "\n"),
+            sha: file.sha, branch: "main",
+            // 用 GitHub 的匿名信箱當作者，不會露出真實信箱
+            committer: { name: owner, email: `${owner}@users.noreply.github.com` },
+          }) });
+          break;
+        } catch (e) {
+          if (e.status === 409 && attempt < 2) continue;  // 剛好撞到自動檢查在存檔，重試
+          throw e;
+        }
+      }
+      store.set("gh_token", token);
+      data.sites = sites;
+      msg.className = "msg ok"; msg.textContent = "已儲存！約 1 分鐘後會用新設定重新檢查。";
+      cancelEdit();
+      setTimeout(loadStatus, 5000);
+    } catch (e) {
+      if (e.badToken) { store.set("gh_token", null); $("token").value = ""; $("token-box").hidden = false; }
+      msg.className = "msg bad"; msg.textContent = `儲存失敗：${e.message}`;
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
   load();
-  setInterval(load, 60000);
+  setInterval(() => { if ($("editor").hidden) load(); }, 60000);
 </script>
 </body>
 </html>
