@@ -1,0 +1,35 @@
+name: 關鍵字監控
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # 每 5 分鐘（GitHub 尖峰時段可能延遲幾分鐘）
+  workflow_dispatch:         # 可在 Actions 頁面按「Run workflow」立即檢查
+  push:
+    paths: [config.json]     # 改完設定馬上檢查一次
+
+permissions:
+  contents: write
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: 檢查網站
+        run: python3 keyword_watcher.py --once
+      - name: 儲存紀錄
+        run: |
+          git add state.json docs/data.json
+          if git diff --cached --quiet; then exit 0; fi
+          git -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -m "更新監控紀錄"
+          git pull --rebase && git push

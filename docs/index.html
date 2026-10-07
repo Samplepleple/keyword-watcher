@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="關鍵字監控">
+<meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121418" media="(prefers-color-scheme: dark)">
+<title>關鍵字監控</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔔</text></svg>">
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --fg: #1b2029; --muted: #687184; --line: #e2e5eb;
+    --accent: #2563eb; --accent-soft: #e8efff; --ok: #16a34a; --warn: #d97706; --bad: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121418; --card: #1b1f26; --fg: #e8ebf1; --muted: #98a1b3; --line: #2b313b;
+      --accent: #6b9bff; --accent-soft: #1f2a44; --ok: #4ade80; --warn: #fbbf24; --bad: #f87171;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px 40px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  h1 { font-size: 24px; margin: 0; flex: 1; }
+  h2 { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 24px 0 8px; }
+  .status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.bad { background: var(--bad); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+  .sites .site { padding: 12px 14px; border-top: 1px solid var(--line); }
+  .sites .site:first-child { border-top: 0; }
+  .site a { color: var(--fg); text-decoration: none; font-weight: 600; overflow-wrap: anywhere; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 2px 10px; font-size: 13px; }
+  .items { list-style: none; margin: 0; padding: 0; }
+  .items li { border-top: 1px solid var(--line); }
+  .items li:first-child { border-top: 0; }
+  .items a { display: block; padding: 12px 14px; color: inherit; text-decoration: none; }
+  .items a:active { background: var(--accent-soft); }
+  .meta { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  .snippet { overflow-wrap: anywhere; }
+  .snippet mark { background: none; color: var(--accent); font-weight: 600; }
+  .empty { padding: 20px 14px; color: var(--muted); text-align: center; }
+  .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+  .btn {
+    display: block; text-align: center; padding: 11px 8px; border-radius: 10px; font-size: 15px;
+    background: var(--card); border: 1px solid var(--line); color: var(--fg); text-decoration: none;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .setup { padding: 12px 14px; }
+  .setup p { margin: 0 0 8px; }
+  .setup ol { margin: 0 0 8px; padding-left: 20px; }
+  .setup li { margin-bottom: 4px; }
+  .setup a { color: var(--accent); }
+  .muted { color: var(--muted); font-size: 13px; }
+  code { background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-size: 15px; }
+  .copy { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 6px; padding: 2px 10px; font: inherit; font-size: 13px; }
+  .refresh { border: 0; background: none; color: var(--accent); font: inherit; font-size: 15px; padding: 6px; cursor: pointer; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>🔔 關鍵字監控</h1>
+    <button class="refresh" onclick="load()">重新整理</button>
+  </header>
+  <p class="status"><span class="dot" id="dot"></span><span id="status">讀取中…</span></p>
+
+  <h2>最近找到的新內容</h2>
+  <div class="card"><ul class="items" id="items"><li class="empty">讀取中…</li></ul></div>
+
+  <h2>監控中的網站</h2>
+  <div class="card sites" id="sites"></div>
+
+  <div class="actions">
+    <a class="btn primary" id="edit" target="_blank" rel="noopener">修改網站／關鍵字</a>
+    <a class="btn" id="run" target="_blank" rel="noopener">立即檢查</a>
+  </div>
+
+  <h2>開啟手機通知（不用裝 App）</h2>
+  <div class="card setup">
+    <p>頻道名稱：<code id="topic">—</code> <button class="copy" onclick="copyTopic()">複製</button></p>
+    <ol>
+      <li>用 iPhone 的 <b>Safari</b> 打開 <a href="https://ntfy.sh/app" target="_blank" rel="noopener">ntfy.sh/app</a></li>
+      <li>點下方「分享」→「加入主畫面」</li>
+      <li>從主畫面打開 ntfy，按「＋ 訂閱主題」，貼上上面的頻道名稱</li>
+      <li>跳出詢問時按「允許」通知，就完成了 🎉</li>
+    </ol>
+    <p class="muted">需要 iOS 16.4 以上。超過一週沒打開主畫面上的 ntfy，通知會暫停，打開一次就會恢復。
+      想隨時看這個頁面，也可以把這頁「加入主畫面」。</p>
+  </div>
+</main>
+
+<script>
+  // 從網址推算 GitHub 帳號與 repo，例如 https://帳號.github.io/repo名稱/
+  const owner = location.hostname.split(".")[0];
+  const repo = location.pathname.split("/").filter(Boolean)[0] || "";
+  const repoUrl = `https://github.com/${owner}/${repo}`;
+  document.getElementById("edit").href = `${repoUrl}/edit/main/config.json`;
+  document.getElementById("run").href = `${repoUrl}/actions/workflows/watch.yml`;
+
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const ago = d => {
+    const min = Math.round((Date.now() - d) / 60000);
+    if (min < 1) return "剛剛";
+    if (min < 60) return `${min} 分鐘前`;
+    if (min < 1440) return `${Math.round(min / 60)} 小時前`;
+    return d.toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" });
+  };
+  const highlight = (text, kw) => esc(text).replace(new RegExp(esc(kw).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`);
+
+  async function loadData() {
+    const data = await (await fetch("data.json", { cache: "no-store" })).json();
+    document.getElementById("topic").textContent = data.ntfy_topic || "—";
+    const items = data.items || [];
+    document.getElementById("items").innerHTML = items.length ? items.map(it => `
+      <li><a href="${esc(it.link || it.source)}" target="_blank" rel="noopener">
+        <div class="meta"><span class="chip">${esc(it.keyword)}</span><span>${ago(new Date(it.found_at))}</span></div>
+        <div class="snippet">${highlight(it.snippet, it.keyword)}</div>
+      </a></li>`).join("")
+      : `<li class="empty">還沒有新內容。<br>第一次檢查只會記錄現有內容當基準，之後新出現的才會通知。</li>`;
+    document.getElementById("sites").innerHTML = (data.sites || []).map(s => `
+      <div class="site"><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url.replace(/^https?:\/\//, ""))}</a>
+        <div class="chips">${s.keywords.map(k => `<span class="chip">${esc(k)}</span>`).join("")}</div></div>`).join("");
+  }
+
+  async function loadStatus() {
+    const dot = document.getElementById("dot"), status = document.getElementById("status");
+    try {
+      const r = await fetch(`https://api.github.com/repos/${owner}/${repo}/actions/workflows/watch.yml/runs?per_page=1`);
+      const run = (await r.json()).workflow_runs?.[0];
+      if (!run) throw new Error();
+      const when = new Date(run.run_started_at || run.created_at);
+      const stale = Date.now() - when > 30 * 60000;
+      if (run.status !== "completed") { dot.className = "dot ok"; status.textContent = "正在檢查…"; }
+      else if (run.conclusion !== "success") { dot.className = "dot bad"; status.textContent = `上次檢查失敗（${ago(when)}）`; }
+      else { dot.className = stale ? "dot warn" : "dot ok"; status.textContent = `監控中・上次檢查 ${ago(when)}`; }
+    } catch {
+      dot.className = "dot"; status.textContent = "無法取得檢查狀態";
+    }
+  }
+
+  function copyTopic() {
+    const btn = document.querySelector(".copy");
+    navigator.clipboard.writeText(document.getElementById("topic").textContent)
+      .then(() => { btn.textContent = "已複製"; setTimeout(() => btn.textContent = "複製", 1500); });
+  }
+
+  function load() { loadData().catch(() => {}); loadStatus(); }
+  load();
+  setInterval(load, 60000);
+</script>
+</body>
+</html>

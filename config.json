@@ -1,0 +1,14 @@
+{
+  "sites": [
+    {
+      "url": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
+      "keywords": [
+        "flow",
+        "atarayo"
+      ]
+    }
+  ],
+  "ntfy_topic": "kw-6e453407b4",
+  "interval_minutes": 5,
+  "notify_on_first_run": false
+}
