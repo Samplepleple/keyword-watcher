@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-13T03:05:19+00:00",
+  "checked_at": "2026-11-13T10:51:40+00:00",
   "sites": [
     {
       "url": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
@@ -10,6 +10,13 @@
     }
   ],
   "items": [
+    {
+      "found_at": "2026-11-13T10:51:40+00:00",
+      "source": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
+      "keyword": "atarayo",
+      "snippet": "[換票] Atarayo換藍井艾露二樓座位區*1",
+      "link": "https://www.ptt.cc/bbs/Drama-Ticket/M.1794551281.A.0D2.html"
+    },
     {
       "found_at": "2026-10-31T22:35:59+00:00",
       "source": "https://www.ptt.cc/bbs/Drama-Ticket/index.html",
